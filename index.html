@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://www.flaticon.com/free-animated-icon/cloudy_17102931">
+    <link rel="apple-touch-icon" sizes="512x512" href="https://www.flaticon.com/free-animated-icon/cloudy_17102931">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1f2937, #374151);
+            color: #d1d5db;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="container">
+    <!-- Main weather card container -->
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <h1 class="text-3xl font-semibold text-center mb-6 text-white">Weather App</h1>
+
+        <!-- Search input and button -->
+        <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <input type="text" id="city-input" placeholder="Enter city name..." class="flex-1 w-full px-4 py-2 rounded-xl bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all">
+            <button id="search-btn" class="w-full sm:w-auto px-6 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                Search
+            </button>
+        </div>
+
+        <!-- Loading and error messages -->
+        <div id="status-message" class="text-center text-sm text-gray-400 mb-4 transition-all duration-300 hidden"></div>
+
+        <!-- Weather display section -->
+        <div id="weather-display" class="transition-all duration-300 hidden">
+            <!-- Updated to show city and country -->
+            <h2 id="city-name" class="text-2xl font-bold text-center text-white"></h2>
+            <p id="date" class="text-center text-gray-400 mb-4"></p>
+
+            <div class="text-center mb-4">
+                <img id="weather-icon" src="" alt="Weather icon" class="w-24 h-24 mx-auto mb-2">
+                <p id="description" class="text-xl font-medium capitalize"></p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <!-- Temperature -->
+                <div class="bg-gray-700 p-4 rounded-xl shadow-inner">
+                    <p class="text-3xl font-bold text-blue-300 mb-1"><span id="temperature"></span>°C</p>
+                    <p class="text-sm font-light text-gray-400">Temperature</p>
+                </div>
+                <!-- Humidity -->
+                <div class="bg-gray-700 p-4 rounded-xl shadow-inner">
+                    <p class="text-3xl font-bold text-green-300 mb-1"><span id="humidity"></span>%</p>
+                    <p class="text-sm font-light text-gray-400">Humidity</p>
+                </div>
+                <!-- Wind Speed -->
+                <div class="bg-gray-700 p-4 rounded-xl shadow-inner">
+                    <p class="text-3xl font-bold text-yellow-300 mb-1"><span id="wind-speed"></span> m/s</p>
+                    <p class="text-sm font-light text-gray-400">Wind Speed</p>
+                </div>
+                <!-- Feels Like -->
+                <div class="bg-gray-700 p-4 rounded-xl shadow-inner">
+                    <p class="text-3xl font-bold text-orange-300 mb-1"><span id="feels-like"></span>°C</p>
+                    <p class="text-sm font-light text-gray-400">Feels Like</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API key and URL from the user prompt
+        const apiKey = "b49b02fc78f1955eb44740d6cf3387b2";
+        const weatherApiUrl = "https://api.openweathermap.org/data/2.5/weather";
+
+        // DOM elements
+        const cityInput = document.getElementById('city-input');
+        const searchBtn = document.getElementById('search-btn');
+        const statusMessage = document.getElementById('status-message');
+        const weatherDisplay = document.getElementById('weather-display');
+
+        const cityNameEl = document.getElementById('city-name');
+        const dateEl = document.getElementById('date');
+        const weatherIconEl = document.getElementById('weather-icon');
+        const descriptionEl = document.getElementById('description');
+        const temperatureEl = document.getElementById('temperature');
+        const humidityEl = document.getElementById('humidity');
+        const windSpeedEl = document.getElementById('wind-speed');
+        const feelsLikeEl = document.getElementById('feels-like');
+
+        // Function to show a message to the user
+        function showStatusMessage(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden');
+            statusMessage.style.color = isError ? '#ef4444' : '#9ca3af'; // Red for error, gray for others
+        }
+
+        // Function to hide the weather display and messages
+        function resetUI() {
+            weatherDisplay.classList.add('hidden');
+            statusMessage.classList.add('hidden');
+        }
+
+        // Function to fetch weather data from the API
+        async function getWeatherData(city) {
+            resetUI();
+            showStatusMessage('Fetching weather data...');
+
+            const apiUrl = `${weatherApiUrl}?q=${city}&appid=${apiKey}&units=metric`;
+
+            try {
+                const response = await fetch(apiUrl);
+
+                // Check for a 404 (Not Found) or other errors
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('City not found. Please try again.');
+                    } else {
+                        throw new Error(`Error: ${response.statusText}`);
+                    }
+                }
+
+                const data = await response.json();
+                showWeather(data);
+            } catch (error) {
+                showStatusMessage(error.message, true);
+                console.error('Error fetching weather data:', error);
+            }
+        }
+
+        // Function to display the weather data in the UI
+        function showWeather(data) {
+            statusMessage.classList.add('hidden'); // Hide the loading message
+
+            // The OpenWeatherMap API does not provide taluka, district, or pincode.
+            // It only provides the city name and country code.
+            const locationText = data.name + (data.sys.country ? `, ${data.sys.country}` : '');
+            cityNameEl.textContent = locationText;
+            dateEl.textContent = new Date().toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            // Get the first weather condition
+            const weatherCondition = data.weather[0];
+            descriptionEl.textContent = weatherCondition.description;
+            
+            // Set the weather icon
+            const iconCode = weatherCondition.icon;
+            weatherIconEl.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            weatherIconEl.alt = weatherCondition.main;
+
+            // Temperature and other details
+            temperatureEl.textContent = Math.round(data.main.temp);
+            humidityEl.textContent = data.main.humidity;
+            windSpeedEl.textContent = data.wind.speed.toFixed(1);
+            feelsLikeEl.textContent = Math.round(data.main.feels_like);
+
+            weatherDisplay.classList.remove('hidden'); // Show the weather display
+        }
+
+        // Event listener for the search button
+        searchBtn.addEventListener('click', () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                getWeatherData(city);
+            } else {
+                showStatusMessage('Please enter a city name.', true);
+            }
+        });
+
+        // Event listener for pressing 'Enter' in the input field
+        cityInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                searchBtn.click();
+            }
+        });
+
+        // The initial weather fetch for 'London' has been removed to show a blank page.
+        // The app will now wait for user input.
+
+    </script>
+</body>
+</html>

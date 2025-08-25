@@ -1,0 +1,15 @@
+{
+  "name": "Weather App",
+  "short_name": "Weather App",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#222",
+  "theme_color": "#43c6ac",
+  "icons": [
+    {
+      "src": "https://www.flaticon.com/free-animated-icon/cloudy_17102931",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
