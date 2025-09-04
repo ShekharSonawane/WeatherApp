@@ -7,9 +7,10 @@
   "theme_color": "#43c6ac",
   "icons": [
     {
-      "src": "https://www.flaticon.com/free-animated-icon/cloudy_17102931",
+      "src": "cloud.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
+
 }
